@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SlideCraft AI — Image to Editable PPT</title>
+<style>
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 5%,#e3f2ff 0,transparent 34%),#f5f7fb}
+main{max-width:980px;margin:0 auto;padding:54px 22px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:54px}
+.brand{font-size:20px;font-weight:800;letter-spacing:-.5px}.brand span{color:#168bd2}
+.pill{border:1px solid #d7e3ed;border-radius:99px;padding:8px 13px;color:#587084;font-size:12px;background:#fff}
+h1{font-size:clamp(34px,6vw,56px);letter-spacing:-2px;line-height:1.05;margin:0 0 15px;text-align:center}
+.sub{max-width:650px;margin:0 auto 34px;text-align:center;color:#617486;line-height:1.65}
+.panel{background:#fff;border:1px solid #e0e8ef;border-radius:22px;padding:28px;box-shadow:0 18px 60px #17324a0d}
+.drop{border:2px dashed #b8cbd9;border-radius:16px;padding:42px 18px;text-align:center;background:#f9fcff;cursor:pointer;transition:.2s}
+.drop.over{border-color:#138bd0;background:#eff9ff}.cloud{font-size:38px;color:#168bd2}.drop strong{display:block;margin:12px 0 5px;font-size:17px}.muted{color:#738596;font-size:13px}
+input{display:none}.files{margin:18px 0 0;padding:0;list-style:none}.files li{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:9px;background:#f3f7fa;margin-top:7px;font-size:13px}
+.settings{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0}.setting{flex:1;min-width:160px;border:1px solid #e5ebf0;border-radius:12px;padding:13px}.setting small{display:block;color:#718294;margin-bottom:5px}.setting b{font-size:14px}
+button{border:0;border-radius:12px;background:#087fc2;color:#fff;font-weight:700;font-size:15px;padding:16px 20px;width:100%;cursor:pointer;box-shadow:0 8px 20px #087fc233}
+button:disabled{opacity:.55;cursor:not-allowed}.status{min-height:24px;text-align:center;margin-top:15px;color:#617486;font-size:13px}
+.foot{text-align:center;color:#8b9aa7;font-size:12px;margin:20px 0}.note{font-size:12px;line-height:1.5;color:#718294;margin-top:15px}
+@media(max-width:600px){main{padding:28px 14px}.top{margin-bottom:40px}.panel{padding:17px}.drop{padding:32px 12px}}
+</style></head>
+<body><main>
+<div class="top"><div class="brand">✦ SlideCraft <span>AI</span></div><div class="pill">IMAGE → EDITABLE PPTX</div></div>
+<h1>Turn slide images into<br><span style="color:#1287cb">editable PowerPoint.</span></h1>
+<p class="sub">Upload one or more 16:9 slide images. Gemini analyses the layout, then your PowerPoint reconstruction engine builds editable text, native shapes and separate image assets.</p>
+<section class="panel">
+<label class="drop" id="drop">
+<div class="cloud">⇧</div><strong>Drop your slide images here</strong>
+<div class="muted">or click to browse · PNG, JPG, WEBP · up to 20 slides</div>
+<input id="files" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+</label>
+<ul class="files" id="list"></ul>
+<div class="settings">
+<div class="setting"><small>Slide size</small><b>16:9 widescreen</b></div>
+<div class="setting"><small>Output</small><b>Editable PowerPoint (.pptx)</b></div>
+<div class="setting"><small>AI analysis</small><b>Gemini API</b></div>
+</div>
+<button id="convert" disabled>✦ Convert to Editable PPT</button>
+<div class="status" id="status" aria-live="polite"></div>
+<div class="note">MVP limitation: currently supports 16:9 slide images. Text and simple geometry are rebuilt as editable objects; photos, logos and complex visuals are inserted as separate picture objects. Always review the exported deck for visual accuracy.</div>
+</section>
+<div class="foot">Your API key stays on the server. Do not put it in browser code.</div>
+</main>
+<script>
+const input=document.querySelector('#files'),drop=document.querySelector('#drop'),list=document.querySelector('#list'),btn=document.querySelector('#convert'),status=document.querySelector('#status');let chosen=[];
+function render(){list.innerHTML='';chosen.forEach(f=>{const li=document.createElement('li');li.textContent=f.name+' · '+(f.size/1024/1024).toFixed(2)+' MB';list.appendChild(li)});btn.disabled=!chosen.length}
+drop.addEventListener('click',()=>input.click());input.addEventListener('change',()=>{chosen=[...chosen,...input.files];render();input.value=''});
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over')});drop.addEventListener('dragleave',()=>drop.classList.remove('over'));drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');chosen=[...chosen,...e.dataTransfer.files].filter(f=>/^image\/(png|jpeg|webp)$/.test(f.type));render()});
+btn.addEventListener('click',async()=>{btn.disabled=true;status.textContent='Analysing slides with Gemini and building your editable deck…';const fd=new FormData();chosen.forEach(f=>fd.append('files',f));try{const res=await fetch('/api/convert',{method:'POST',body:fd});if(!res.ok){const body=await res.json().catch(()=>({detail:'Conversion failed'}));throw new Error(body.detail||'Conversion failed')}const blob=await res.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='SlideCraft_Editable.pptx';a.click();URL.revokeObjectURL(url);status.textContent='Done. Your editable PowerPoint download has started.'}catch(e){status.textContent='Error: '+e.message}finally{btn.disabled=!chosen.length}});
+</script></body></html>
