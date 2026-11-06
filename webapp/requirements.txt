@@ -1,0 +1,8 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+google-genai>=1.0
+pydantic>=2.7
+python-pptx>=1.0.2
+Pillow>=10.0
+numpy>=2.0
